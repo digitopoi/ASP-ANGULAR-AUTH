@@ -9,7 +9,9 @@ namespace ASP_Angular_Auth.Services
     public class UserService : IUserService
     {
         private  DataContext _context;
-        User IUserService(DataContext context)
+        private HashService _hashService;
+
+        public UserService(DataContext context)
         {
             _context = context;
         }
@@ -25,7 +27,7 @@ namespace ASP_Angular_Auth.Services
                 return null;
             }
 
-            if (!VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
+            if (!_hashService.VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
                 return null;
 
             return user;
@@ -36,7 +38,7 @@ namespace ASP_Angular_Auth.Services
             return _context.Users;
         }
 
-        public User UserGetById(int id)
+        public User GetById(int id)
         {
             return _context.Users.Find(id);
         }
@@ -44,7 +46,7 @@ namespace ASP_Angular_Auth.Services
         public User Create(User user, string password)
         {
 
-            byte[] passwordHash, passwordSet;
+            byte[] passwordHash, passwordSalt;
 
             if (string.IsNullOrWhiteSpace(password))
                 throw new ApplicationException("Password is required.");
@@ -52,7 +54,7 @@ namespace ASP_Angular_Auth.Services
             if (_context.Users.Any(x => x.UserName == user.UserName))
                 throw new AppException("Username " + user.UserName + " is already taken");
 
-            CreatePasswordHash(password, out passwordHash, out passwordSalt);
+            _hashService.CreatePasswordHash(password, out passwordHash, out passwordSalt);
 
             user.PasswordHash = passwordHash;
             user.PasswordSalt = passwordSalt;
@@ -86,7 +88,7 @@ namespace ASP_Angular_Auth.Services
             if (!string.IsNullOrWhiteSpace(password))
             {
                 byte[] passwordHash, passwordSalt;
-                CreatePasswordHash(password, out passwordHash, out passwordSalt);
+                _hashService.CreatePasswordHash(password, out passwordHash, out passwordSalt);
 
                 user.PasswordHash = passwordHash;
                 user.PasswordSalt = passwordSalt;
@@ -105,6 +107,6 @@ namespace ASP_Angular_Auth.Services
                 _context.SaveChanges();
             }
         }
-        
+
     }
 }
