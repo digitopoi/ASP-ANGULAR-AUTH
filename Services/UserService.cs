@@ -61,7 +61,50 @@ namespace ASP_Angular_Auth.Services
             _context.SaveChanges();
 
             return user;
-            
         }
+
+        public void Update(User userParam, string password = null)
+        {
+            var user = _context.Users.Find(userParam.Id);
+
+            if (user == null)
+                throw new AppException("User not found");
+
+            if (userParam.UserName != user.UserName)
+            {
+                //  username has changed - check if the new username is already in use
+                if (_context.Users.Any(x => x.UserName == userParam.UserName))
+                    throw new AppException("Username " + userParam.UserName + " is already taken.")
+            }
+
+            //  update user properties
+            user.FirstName = userParam.FirstName;
+            user.LastName = userParam.LastName;
+            user.UserName = userParam.UserName;
+
+            //  update password if entered
+            if (!string.IsNullOrWhiteSpace(password))
+            {
+                byte[] passwordHash, passwordSalt;
+                CreatePasswordHash(password, out passwordHash, out passwordSalt);
+
+                user.PasswordHash = passwordHash;
+                user.PasswordSalt = passwordSalt;
+            }
+
+            _context.Users.Update(user);
+            _context.SaveChanges();
+        }
+
+        public void Delete(int id)
+        {
+            var user = _context.Users.Find(id);
+            if (user != null)
+            {
+                _context.Users.Remove(user);
+                _context.SaveChanges();
+            }
+        }
+        
     }
 }
