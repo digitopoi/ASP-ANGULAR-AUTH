@@ -19,15 +19,49 @@ namespace ASP_Angular_Auth.Services
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
                     return null;
 
-            var user = _context.Users.SingleOrDefault(x => x.UserName == username)
+            var user = _context.Users.SingleOrDefault(x => x.UserName == username);
 
-            if (user == null)
+            if (user == null) {
                 return null;
+            }
 
             if (!VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
                 return null;
 
             return user;
+        }
+
+        public IEnumerable<User> GetAll()
+        {
+            return _context.Users;
+        }
+
+        public User UserGetById(int id)
+        {
+            return _context.Users.Find(id);
+        }
+
+        public User Create(User user, string password)
+        {
+
+            byte[] passwordHash, passwordSet;
+
+            if (string.IsNullOrWhiteSpace(password))
+                throw new ApplicationException("Password is required.");
+
+            if (_context.Users.Any(x => x.UserName == user.UserName))
+                throw new AppException("Username " + user.UserName + " is already taken");
+
+            CreatePasswordHash(password, out passwordHash, out passwordSalt);
+
+            user.PasswordHash = passwordHash;
+            user.PasswordSalt = passwordSalt;
+
+            _context.Users.Add(user);
+            _context.SaveChanges();
+
+            return user;
+            
         }
     }
 }
